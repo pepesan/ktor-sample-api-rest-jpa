@@ -23,10 +23,15 @@ class UserService(private val database: Database) {
             SchemaUtils.create(Users)
         }
     }
+    suspend fun list(): List<ExposedUser> {
+        return dbQuery {
+            Users.selectAll()
+                .map { ExposedUser(it[Users.name], it[Users.age]) }
+        }
+    }
 
     suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }
-
     suspend fun create(user: ExposedUser): Int = dbQuery {
         Users.insert {
             it[name] = user.name

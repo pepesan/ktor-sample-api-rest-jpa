@@ -16,6 +16,11 @@ fun Application.configureDatabases() {
     )
     val userService = UserService(database)
     routing {
+        // list
+        get("/users") {
+            val listado = userService.list()
+            call.respond(HttpStatusCode.OK, listado)
+        }
         // Create user
         post("/users") {
             val user = call.receive<ExposedUser>()
@@ -36,14 +41,26 @@ fun Application.configureDatabases() {
         put("/users/{id}") {
             val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
             val user = call.receive<ExposedUser>()
-            userService.update(id, user)
-            call.respond(HttpStatusCode.OK)
+            val userLoaded = userService.read(id)
+            if (userLoaded != null) {
+                userService.update(id, user)
+                call.respond(HttpStatusCode.OK)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
+
+
         }
         // Delete user
         delete("/users/{id}") {
             val id = call.parameters["id"]?.toInt() ?: throw IllegalArgumentException("Invalid ID")
-            userService.delete(id)
-            call.respond(HttpStatusCode.OK)
+            val user = userService.read(id)
+            if (user != null) {
+                userService.delete(id)
+                call.respond(HttpStatusCode.OK, user)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
         }
     }
 }
